@@ -1,0 +1,11 @@
+train:
+  batch_size: 16
+  epochs: 150
+  warmup_epochs: 400
+  lr: 1.0e-4
+  min_lr: 1.0e-6
+  shape: {h: 256, w: 256}
+  num_workers: 8
+  use_amp: false
+  grad_acc_step: 2
+
