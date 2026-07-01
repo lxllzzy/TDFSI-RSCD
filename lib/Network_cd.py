@@ -3,7 +3,7 @@ from lib.pvt_v2 import pvt_v2_b4
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from lib.upernet_light import UperNetHead, EinFFT
+from lib.upernet_light import UperNetHead, EinFFT, DiffFusionBlock, MultiScaleDiffExtractor
 
 
 
@@ -11,46 +11,6 @@ from lib.upernet_light import UperNetHead, EinFFT
 backbone: PVT_v2_b4
 '''
 
-
-
-class DiffFusionBlock(nn.Module):
-    def __init__(self, in_ch: int):
-        super().__init__()
-        self.attn = nn.Sequential(
-            nn.Conv2d(in_ch, in_ch, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(in_ch),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_ch, in_ch, 3, 1, 1, bias=False),
-            nn.Sigmoid()
-        )
-        self.fuse = nn.Sequential(
-            nn.Conv2d(in_ch * 3, in_ch, 1, bias=False),
-            nn.BatchNorm2d(in_ch),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, f1, f2):
-        diff = torch.abs(f2 - f1)
-        w = self.attn(diff)
-        diff_enh = diff * w
-        x = torch.cat([f1, f2, diff_enh], 1)
-        return self.fuse(x)
-
-class MultiScaleDiffExtractor(nn.Module):
-
-    def __init__(self, ch_per_stage):
-        super().__init__()
-
-        self.blocks = nn.ModuleList([
-            DiffFusionBlock(ch_per_stage[i]) for i in range(4)
-        ])
-
-    def forward(self, feats1, feats2):
-        diff_feats = []
-        for i in range(4):  # stage
-            diff_feat = self.blocks[i](feats1[i], feats2[i])
-            diff_feats.append(diff_feat)
-        return diff_feats
 
 def structure_loss(pred, mask):
     weit = 1 + 5 * torch.abs(F.avg_pool2d(mask, kernel_size=23, stride=1, padding=11) - mask)
