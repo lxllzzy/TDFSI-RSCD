@@ -3,7 +3,6 @@ from lib.pvt_v2 import pvt_v2_b4
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from lib.FSEL_modules import DRP_1, DRP_2, DRP_3, JDPM, ETB
 
 
 
